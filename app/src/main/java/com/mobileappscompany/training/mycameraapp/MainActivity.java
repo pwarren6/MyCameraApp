@@ -10,7 +10,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.Toast;
 
-public class CameraDemoActivity extends Activity implements SurfaceHolder.Callback{
+public class MainActivity extends Activity implements SurfaceHolder.Callback{
     /** Called when the activity is first created. */
     Camera camera;
     SurfaceView surfaceView;
