@@ -1,83 +1,127 @@
 package com.mobileappscompany.training.mycameraapp;
 
-import android.app.Activity;
-import android.content.ActivityNotFoundException;
-import android.content.Intent;
-import android.graphics.Bitmap;
-import android.hardware.camera2.CaptureRequest;
-import android.net.Uri;
+import android.annotation.TargetApi;
+import android.content.res.Resources;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.hardware.Camera;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.MediaStore;
-import android.support.annotation.RequiresApi;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.Display;
+import android.view.Surface;
 import android.view.SurfaceHolder;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.Toast;
+import android.view.SurfaceView;
+import android.view.WindowManager;
 
 
-public class MainActivity extends Activity implements OnClickListener {
+public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback {
 
-    final int CAMERA_CAPTURE = 1;
-    private Uri picUri;
-    final int PIC_CROP = 2;
+    SurfaceView cameraView, transparentView;
+    SurfaceHolder holder, holderTransparent;
+    Camera mCamera;
+    private float RectLeft, RectTop, RectRight, RectBottom;
+    int deviceHeight, deviceWidth;
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Button captureBtn = (Button)findViewById(R.id.capture_btn);
-        captureBtn.setOnClickListener(this);
+        cameraView = (SurfaceView)findViewById(R.id.cameraView);
+        holder = cameraView.getHolder();
+        holder.addCallback((SurfaceHolder.Callback)this);
+        cameraView.setSecure(true);
+
+        transparentView = (SurfaceView)findViewById(R.id.transparentView);
+        holderTransparent = transparentView.getHolder();
+        holderTransparent.addCallback((SurfaceHolder.Callback)this);
+        transparentView.setZOrderMediaOverlay(true);
+
+        deviceWidth = getScreenWidth();
+        deviceHeight = getScreenHeight();
+    }
+
+    public static int getScreenWidth(){
+        return Resources.getSystem().getDisplayMetrics().widthPixels;
+    }
+    public static int getScreenHeight(){
+        return Resources.getSystem().getDisplayMetrics().heightPixels;
+    }
+
+    private void Draw(){
+        Canvas canvas = holderTransparent.lockCanvas(null);
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setColor(Color.GREEN);
+        paint.setStrokeWidth(3);
+        RectLeft = 1;
+        RectTop = 200;
+        RectRight = RectLeft + deviceWidth-100;
+        RectBottom = RectTop + 200;
+        Rect rec = new Rect((int)RectLeft,(int)RectTop,(int)RectRight,(int)RectBottom);
+        canvas.drawRect(rec, paint);
+        holderTransparent.unlockCanvasAndPost(canvas);
     }
 
     @Override
-    public void onClick(View v) {
-        if(v.getId() == R.id.capture_btn){
-            try{
-                Intent captureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                startActivityForResult(captureIntent, CAMERA_CAPTURE);
-            }
-            catch(ActivityNotFoundException anfe){
-                String errorMessage = "Sorry, but your device doesn't support capturing images.";
-                Toast toast = Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT);
-                toast.show();
-            }
-        }
-    }
-
-    protected void onActivityResult(int requestCode, int resultCode, Intent data){
-        if(resultCode == RESULT_OK){
-            if(requestCode == CAMERA_CAPTURE){
-                picUri = data.getData();
-                performCrop();
-            }
-        }else if (requestCode == PIC_CROP){
-            Bundle extras = data.getExtras();
-            Bitmap thePic = extras.getParcelable("data");
-            ImageView picView = (ImageView)findViewById(R.id.picture);
-            picView.setImageBitmap(thePic);
-        }
-    }
-
-    private void performCrop(){
+    public void surfaceCreated(SurfaceHolder holder) {
         try{
-            Intent cropIntent = new Intent("com.android.camera.action.CROP");
-            cropIntent.setDataAndType(picUri, "image/*");
-            cropIntent.putExtra("crop", "true");
-            cropIntent.putExtra("aspectX", 1);
-            cropIntent.putExtra("aspectY", 1);
-            //indicate desired crop aspects
-            cropIntent.putExtra("outputX", 256);
-            cropIntent.putExtra("outputY", 256);
-            //indicate X and Y output
-            cropIntent.putExtra("return-data", true);
-            startActivityForResult(cropIntent, PIC_CROP);
-        }catch(ActivityNotFoundException anfe){
-            String errorMessage = "Sorry, your device doesn't support the crop action.";
-            Toast toast = Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT);
-            toast.show();
+            synchronized(holder)
+            {Draw();}
+            mCamera = Camera.open();
+        }catch(Exception e){
+            Log.i("Exception", e.toString());
+            return;
         }
+        Camera.Parameters param;
+        param = mCamera.getParameters();
+        param.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+
+        Display display = ((WindowManager)getSystemService(WINDOW_SERVICE)).getDefaultDisplay();
+        if(display.getRotation() == Surface.ROTATION_0){
+            mCamera.setDisplayOrientation(90);
+        }
+        mCamera.setParameters(param);
+        try {
+            mCamera.setPreviewDisplay(holder);
+            mCamera.startPreview();
+        }catch(Exception e){
+            return;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+        refreshCamera();
+    }
+    public void refreshCamera(){
+        if(holder.getSurface() == null){
+            return;
+        }
+        try{
+            mCamera.stopPreview();
+        }catch(Exception e){
+
+        }
+        try{
+            mCamera.setPreviewDisplay(holder);
+            mCamera.startPreview();
+        }catch(Exception e){
+
+        }
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        mCamera.release();
     }
 }
