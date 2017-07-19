@@ -110,13 +110,12 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         try{
             mCamera.stopPreview();
         }catch(Exception e){
-
+            return;
         }
         try{
             mCamera.setPreviewDisplay(holder);
             mCamera.startPreview();
         }catch(Exception e){
-
         }
     }
 
