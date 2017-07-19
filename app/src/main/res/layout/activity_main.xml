@@ -4,24 +4,8 @@
     android:layout_height="fill_parent"
     android:orientation="vertical">
 
-    <TextView
+    <SurfaceView
+        android:id="@+id/surfaceview"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/intro"
-        android:layout_margin="3dp"
-        android:textStyle="bold"/>
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/capture_btn"
-        android:text="@string/capture"/>
-
-    <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/picture"
-        android:contentDescription="@string/capture"
-        android:layout_margin="5dp"
-        android:background="@drawable/pic_border"/>
+        android:layout_height="fill_parent"/>
 </LinearLayout>
