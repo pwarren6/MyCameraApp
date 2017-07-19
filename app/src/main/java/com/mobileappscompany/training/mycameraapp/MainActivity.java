@@ -1,6 +1,7 @@
 package com.mobileappscompany.training.mycameraapp;
 
 import android.annotation.TargetApi;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -9,6 +10,7 @@ import android.graphics.Rect;
 import android.hardware.Camera;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Display;
@@ -92,6 +94,13 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         }catch(Exception e){
             return;
         }
+    }
+
+    @Override
+    protected void onStart(){
+        super.onStart();
+        Intent camIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        startActivity(camIntent);
     }
 
     @Override
